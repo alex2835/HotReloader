@@ -1,5 +1,6 @@
 *.xcodepr
 **/.vs/**
+**/.vscode/**
 **/build/**
 **/out/**
 */venv/*
