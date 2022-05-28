@@ -1,49 +1,17 @@
 #pragma once
 
-#include <iostream>
-#include <string_view>
-#include <unordered_map>
-#include <typeinfo>
+#define DYNALO_EXPORT_SYMBOLS
+#include <dynalo/symbol_helper.hpp>
 
 #include <boost/preprocessor/variadic.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq.hpp>
 #include <boost/preprocessor/tuple.hpp>
 
-#include "export_function.hpp"
-
+#include "details/function_registry.hpp"
 
 namespace hr
 {
-using namespace std::literals;
-
-class Registrar
-{  
-public:
-   static Registrar& Get()
-   {
-      static Registrar registrar;
-      return registrar;
-   }
-
-   template <typename Ret, typename ...Args>
-   void Registrate( std::string_view func_name  )
-   {
-      std::cout << func_name << std::endl << << std::endl;
-
-      ExportFunction function;
-      f.mReturnType = typeid(Ret).name();
-      f.mArgsTypes = { typeid(Args).name()... };
-      mFunctions[ std::string( func_name ) ] = func;
-   }
-
-   std::unordered_map<std::string, ExportFunction> GetInfo();
-
-private:
-   Registrar() = default;
-   std::unordered_map<std::string, ExportFunction> mFunctions;
-};
-
 
 template< typename Ret, typename ...Args>
 class Registarator
@@ -51,7 +19,7 @@ class Registarator
 public:
    Registarator( std::string_view function_name )
    { 
-      Registrar::Get().Registrate<Ret, Args...>( function_name );
+      FunctionRegistry::Get().Registrate<Ret, Args...>( function_name );
    }
 };
 
@@ -71,9 +39,7 @@ public:
   BOOST_PP_IF(BOOST_PP_SEQ_SIZE(seq),                               \
               BOOST_PP_SEQ_TO_TUPLE(seq), (empty))
 #define FOO8(name, ret, types, dargs, cargs)                        \
-ret BOOST_PP_CAT( hr_, name ) dargs {                               \
+DYNALO_EXPORT ret BOOST_PP_CAT( hr_, name ) DYNALO_CALL dargs {     \
    return name cargs;                                               \
 }                                                                   \
-Registarator<ret, types> BOOST_PP_CAT( registrator_, name )( BOOST_PP_CAT( #name, sv ) );
-
-
+hr::Registarator<ret, types> BOOST_PP_CAT( registrator_, name )( std::string_view( #name ) );

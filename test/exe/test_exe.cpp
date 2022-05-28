@@ -1,9 +1,22 @@
 
-#include "hot_reloader.hpp"
+#include "import.hpp"
+
+#include <iostream>
+
+using namespace hr;
 
 void main()
 {
-   hr::HotReloader hr( "test" );
+   try
+   {
+      hr::HotReloader hr( "HotReloaderTestLib" );
+      auto info = hr.GetFunction<LibraryMeta()>( "GetModuleInfo" );
 
-   hr.GetFunction<void()>( "temp" );
+      for( const auto& [name, args] : info() )
+         std::cout << name << "  " << args.ToString() << std::endl;
+   }
+   catch(const std::exception& e)
+   {
+      std::cerr << e.what() << '\n';
+   }
 }

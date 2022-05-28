@@ -4,4 +4,4 @@ project(HotReloaderTestLib VERSION 0.1.0)
 
 add_library(HotReloaderTestLib SHARED test_lib.cpp)
 
-target_link_libraries(HotReloaderTestLib HotReloader)
+target_link_libraries(HotReloaderTestLib HotReloaderExport)

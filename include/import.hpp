@@ -8,7 +8,8 @@
 #include <memory>
 
 #include <dynalo/dynalo.hpp>
-#include "function.hpp"
+#include "details/function.hpp"
+#include "details/function_meta.hpp"
 
 namespace hr
 {
@@ -64,24 +65,13 @@ public:
 
 
 private:
-   std::string GetOutputPath()
-   {
-      auto lib_name = mLibraryOrigin.filename().string() + std::to_string(GetLibraryVersion());
-      return dynalo::to_native_name(CACHE_DIR + lib_name );
-   }
-
-   int GetLibraryVersion()
-   {
-      return static_cast<int>( mLibraries.size() );
-   }
-
-   dynalo::library& GetActiveLibrary()
-   {
-      return mLibraries.back();
-   }
+   std::string GetOutputPath();
+   int GetLibraryVersion();
+   dynalo::library& GetActiveLibrary();
 
    std::vector<dynalo::library> mLibraries;
    fs::path mLibraryOrigin;
+   std::string mLibraryName;
    fs::path mLibraryCopy;
    fs::file_time_type mLastUpdateTime;
    std::unordered_map<std::string, FunctionPointer> mFunctionCache;

@@ -3,5 +3,7 @@ project(HotReloaderTestExe VERSION 0.1.0)
 
 add_executable(HotReloaderTestExe test_exe.cpp)
 
-target_link_libraries(HotReloaderTestExe HotReloader)
+target_link_libraries(HotReloaderTestExe HotReloaderImport)
+
+HOT_RELOAD_LIB(HotReloaderTestExe HotReloaderTestLib)
 

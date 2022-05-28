@@ -6,7 +6,8 @@ enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(src)
+add_subdirectory(src/import)
+add_subdirectory(src/export)
 add_subdirectory(test)
 
 set(CPACK_PROJECT_NAME HotReloader)

@@ -1,9 +1,9 @@
 
-#include "hot_reloader.hpp"
+#include "export.hpp"
 
-void main()
+
+int mul( int a, int b )
 {
-   hr::HotReloader hr( "test" );
-
-   hr.GetFunction<void()>( "temp" );
+   return a * b;
 }
+REGISTRATE_FUNC( mul, int, int, int )
