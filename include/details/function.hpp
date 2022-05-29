@@ -11,7 +11,7 @@ class Function;
 template<typename Ret, typename... Args>
 class Function<Ret(Args...)>
 {
-using FunctionType = Ret( Args... );
+using FunctionType = Ret(Args...);
 
 public:
    Ret operator() ( Args&&... args )
@@ -21,8 +21,13 @@ public:
 
    Function( FunctionType* func, int version )
       : mFunction( func ),
-        mFunctionVersion( version )
+        mLibVersion( version )
    {}
+
+   int GetLibVersion()
+   {
+      return mLibVersion;
+   }
 
    static std::string SignatureToString()
    {
@@ -42,8 +47,7 @@ public:
 
 private:
    FunctionType* mFunction;
-   HotReloader* HotReloader;
-   int mFunctionVersion;
+   int mLibVersion;
 };
 
 

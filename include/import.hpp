@@ -28,7 +28,9 @@ public:
 
    /*
     *  @brief Path without extension
-    *  @throw If dll can't be loaded
+    *  @throw In such cases:
+    *             1) If dll can't be loaded
+    *             2) If signature is different to previous version
     */
    HotReloader( fs::path path );
 
@@ -56,7 +58,7 @@ public:
       if( expected != existed )
          throw std::runtime_error( "Signature of function: " + name + " is different"
                                    "\nExpected: " + expected +
-                                   "\nExisted: " + existed );
+                                   "\nLibrary provides: " + existed );
 
       if( mFunctionCache.count( name ) )
          return reinterpret_cast<FunctionSignature*>( mFunctionCache[name] );
@@ -82,7 +84,7 @@ public:
     * @brief Information about all functions
     *        provided by this lib 
     * @return unordered_map<Name, Function>
-    *         where Function{ Ret, std::vactor<Arg> } 
+    *         where Function{ Ret, std::vector<Arg> } 
     */
    const LibraryMeta& GetLibraryMeta()
    {
@@ -93,13 +95,16 @@ public:
 private:
    std::string GetInputPath();
    std::string GetOutputPath();
+   std::string GetCacheDir();
    int GetLibraryVersion();
    dynalo::library& GetActiveLibrary();
-   LibraryMeta ExtractLibraryMeta();
+   LibraryMeta ExtractLibraryMeta( dynalo::library& lib );
+   void UpdateMeta( dynalo::library& lib );
 
    fs::file_time_type mLastUpdateTime;
    std::vector<dynalo::library> mLibraryVersions;
    std::string mLibraryName;
+   std::string mLibraryPath;
 
    // Library functions and their types
    LibraryMeta mLibraryMeta;
