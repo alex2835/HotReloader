@@ -6,4 +6,4 @@ int mul( int a, int b )
 {
    return a * b;
 }
-REGISTRATE_FUNC( mul, int, int, int )
+HR_REGISTRATE_FUNC( int, mul, int, int )

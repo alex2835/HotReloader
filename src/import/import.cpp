@@ -2,7 +2,7 @@
 
 namespace hr
 {
-   HotReloader::HotReloader( const fs::path &path )
+   HotReloader::HotReloader( fs::path path )
    {
       // Directory where dll copies are stored
       if (std::filesystem::exists(CACHE_DIR))
@@ -14,53 +14,49 @@ namespace hr
 
       if (path.has_root_path())
       {
-         name = path.filename();
+         path = path.filename();
          library_dir = path.parent_path();
       }
-      else
-         name = path;
       
-      mLibraryName = name.string();
-
-      name = dynalo::to_native_name(name.string());
-      mLibraryOrigin = library_dir / name;
-      mLibraryCopy = CACHE_DIR / name;
+      mLibraryName = path.string();
       TryUpdate();
    }
 
    bool HotReloader::TryUpdate()
    {
       fs::file_time_type lib_update_time = mLastUpdateTime;
-      try
-      {
-         lib_update_time = fs::last_write_time( mLibraryOrigin );
-      }
-      catch( const std::exception& /*e*/ )
-      {}
+      lib_update_time = fs::last_write_time( GetInputPath() );
 
-      if( mLastUpdateTime != lib_update_time || mLibraries.empty() )
+      if( mLastUpdateTime != lib_update_time || mLibraryVersions.empty() )
       {
          for( int i = 0; i < 10; i++ )
          {
-            std::this_thread::sleep_for( RELOAD_DELLEY );
-
             try
             {
+               std::string input_path = GetInputPath();
                std::string output_path = GetOutputPath();
-               fs::copy( mLibraryOrigin, output_path );
-               mLibraries.push_back( dynalo::library( output_path ) );
+               fs::copy( input_path, output_path );
+               mLibraryVersions.push_back( dynalo::library( output_path ) );
                mLastUpdateTime = lib_update_time;
                mFunctionCache.clear();
+               mLibraryMeta = ExtractLibraryMeta();
                return true;
             }
             catch ( const std::exception& /*e*/ )
             {
-               if( i > 9 )
+               if( i > 8 )
                   throw;
             }
+            std::this_thread::sleep_for( RELOAD_DELLEY );
          }
       }
+
       return false;
+   }
+
+   std::string HotReloader::GetInputPath()
+   {
+      return dynalo::to_native_name( mLibraryName );
    }
 
    std::string HotReloader::GetOutputPath()
@@ -72,12 +68,18 @@ namespace hr
 
    int HotReloader::GetLibraryVersion()
    {
-      return static_cast<int>( mLibraries.size() );
+      return static_cast<int>( mLibraryVersions.size() );
    }
 
    dynalo::library& HotReloader::GetActiveLibrary()
    {
-      return mLibraries.back();
+      return mLibraryVersions.back();
+   }
+
+   LibraryMeta HotReloader::ExtractLibraryMeta()
+   {
+      auto func = GetActiveLibrary().get_function<LibraryMeta()>( "HR_GetModuleInfo" );
+      return func();
    }
 
 }

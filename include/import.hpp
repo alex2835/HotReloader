@@ -16,6 +16,7 @@ namespace hr
 namespace fs = std::filesystem;
 using namespace std::chrono_literals;
 typedef void (*FunctionPointer)(void);
+typedef std::unordered_map<std::string, FunctionPointer> FunctionsCache;
 
 
 const std::string CACHE_DIR = "./HR_CACHE/";
@@ -26,55 +27,85 @@ class HotReloader
 public:
 
    /*
-    *  Name without extension
+    *  @brief Path without extension
     *  @throw If dll can't be loaded
     */
-   HotReloader(const fs::path &path);
+   HotReloader( fs::path path );
 
    /*
-    *  Name without extension
-    *  @throw If dll can't be loaded
+    * @brief Check if new version of lib is available and try load it 
+    * @return return true if new version was loaded
+    * @throw std::exception (Copy lib error, Loading error, Signatures changes error)
     */
    bool TryUpdate();
 
 
+   /*
+    * @brief Give a function wrapper by name
+    * @throw If no function with such signature 
+    */
    template <typename FunctionSignature>
-   FunctionSignature* GetFunctionRaw(const std::string &name)
+   FunctionSignature* GetFunctionRaw( std::string name )
    {
-      if (mFunctionCache.count(name))
-      {
-         return reinterpret_cast<FunctionSignature *>(mFunctionCache[name]);
-      }
+      name = "HR_" + name;
+      if( !mLibraryMeta.count( name ) )
+         throw std::runtime_error( "No such function: " + name );
+
+      const auto expected = Function<FunctionSignature>::SignatureToString();
+      const auto& existed = mLibraryMeta[name].ToString();
+      if( expected != existed )
+         throw std::runtime_error( "Signature of function: " + name + " is different"
+                                   "\nExpected: " + expected +
+                                   "\nExisted: " + existed );
+
+      if( mFunctionCache.count( name ) )
+         return reinterpret_cast<FunctionSignature*>( mFunctionCache[name] );
       else
       {
-         auto func = GetActiveLibrary().get_function<FunctionSignature>(name);
-         mFunctionCache[name] = reinterpret_cast<FunctionPointer>(func);
+         auto func = GetActiveLibrary().get_function<FunctionSignature>( name );
+         mFunctionCache[name] = reinterpret_cast<FunctionPointer>( func );
          return func;
       }
    }
 
    /*
-    *  After hot reloading function pointers may be invalid
-    *  @throw If no function with such signature
+    * @brief Give a function wrapper by name
+    * @throw If no function with such signature
     */
    template <typename FunctionSignature>
-   Function<FunctionSignature> GetFunction(const std::string &name)
+   Function<FunctionSignature> GetFunction( const std::string& name )
    {
-      return Function<FunctionSignature>( GetFunctionRaw<FunctionSignature>(name), GetLibraryVersion() );
+      return Function<FunctionSignature>( GetFunctionRaw<FunctionSignature>( name ), GetLibraryVersion() );
+   }
+
+   /**
+    * @brief Information about all functions
+    *        provided by this lib 
+    * @return unordered_map<Name, Function>
+    *         where Function{ Ret, std::vactor<Arg> } 
+    */
+   const LibraryMeta& GetLibraryMeta()
+   {
+      return mLibraryMeta;
    }
 
 
 private:
+   std::string GetInputPath();
    std::string GetOutputPath();
    int GetLibraryVersion();
    dynalo::library& GetActiveLibrary();
+   LibraryMeta ExtractLibraryMeta();
 
-   std::vector<dynalo::library> mLibraries;
-   fs::path mLibraryOrigin;
-   std::string mLibraryName;
-   fs::path mLibraryCopy;
    fs::file_time_type mLastUpdateTime;
-   std::unordered_map<std::string, FunctionPointer> mFunctionCache;
+   std::vector<dynalo::library> mLibraryVersions;
+   std::string mLibraryName;
+
+   // Library functions and their types
+   LibraryMeta mLibraryMeta;
+   // Function pointers cache
+   FunctionsCache mFunctionCache;
+
 };
 
 

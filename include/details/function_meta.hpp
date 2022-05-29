@@ -13,12 +13,15 @@ struct FunctionMeta
 
    std::string ToString() const
    {
+      std::string func_signature;
+      func_signature += mReturnType + " (";
+
       int i = 0;
-      std::string func_def = mReturnType + " (";
       for( const auto& arg : mArgsTypes )
-         func_def += ( i++ ? ", " : "" ) + arg;
-      func_def += ")";
-      return func_def;
+         func_signature += ( i++ ? ", " : "" ) + arg;
+         
+      func_signature += ")";
+      return func_signature;
    }
 };
 
